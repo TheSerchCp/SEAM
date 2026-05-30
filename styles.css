@@ -1,0 +1,160 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial;
+    margin: 0;
+}
+
+nav {
+    margin-bottom: 20px;
+}
+
+/*
+    Diseño de inputs
+*/
+
+.input-base {
+    display: block;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 0.3rem;
+    border: 1px solid #ccc;
+    width: 100%;
+}
+
+/*
+    DISEÑO PARA CARDS
+
+*/
+
+.card {
+    border: 1px solid #ccc;
+    border-radius: 0.3rem;
+    padding: 20px;
+    margin-top: 10px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.card-header {
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+/*
+    CLASES PARA FLEXBOX
+*/
+
+.flex {
+    display: flex;
+}
+
+.flex-row {
+    flex-direction: row;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+/*
+    DISEÑO DE TIPOS DE BOTONES
+*/
+
+
+.btn-link {
+    background: transparent;
+    border: none;
+    color: #a4a4a4;
+    font-weight: bold;
+    padding: 5px;
+    cursor: pointer;
+    width: 100%;
+    text-align: start;
+    margin-top: -10px;
+    font-size: 16px;
+}
+
+.btn-info {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 0.3rem;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-info:hover {
+    background-color: #0056b3;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 0.3rem;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 0.3rem;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+}
+
+.btn-default {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 0.3rem;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-default:hover {
+    background-color: #5a6268;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 0.3rem;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}

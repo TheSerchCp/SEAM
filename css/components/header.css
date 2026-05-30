@@ -1,0 +1,12 @@
+.header-style {
+    display: flex;
+    align-items: center;
+    justify-content: start; 
+    padding: 0 15px;
+    height: 100%; /* Ocupa el 100% de los 60px del padre */
+}
+
+.header-style h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
