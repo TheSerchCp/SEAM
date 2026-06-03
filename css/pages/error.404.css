@@ -1,41 +1,55 @@
-/* Contenedor principal - ocupa toda la pantalla */
+/* Error 404 - Página de error */
 .layout {
-    display: flex;           /* Activa flexbox */
-    flex-direction: column; /* Coloca elementos en columna */
-    min-height: 100vh;      /* Altura mínima = toda la pantalla */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-primary);
 }
 
-/* Header - altura fija, siempre arriba */
 .header {
-    height: 60px;           /* Altura fija */
-    background: #ffa6a6;
-    color: white;
+    height: 60px;
+    background: linear-gradient(135deg, var(--danger) 0%, #b91c1c 100%);
+    border-bottom: 1px solid rgba(239, 68, 68, 0.5);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
-/* Contenedor que tiene sidebar + contenido */
 .main-container {
-    display: flex;          /* Sidebar y contenido en fila */
-    flex: 1;               /* Ocupa el espacio restante */
+    display: flex;
+    flex: 1;
 }
 
-/* Sidebar - ancho fijo, siempre a la izquierda */
 .sidebar {
-    width: 250px;          /* Ancho fijo */
-    background: #c65555;
-    color: white;
+    width: 250px;
+    background-color: rgba(239, 68, 68, 0.1);
+    border-right: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* Contenido principal - ocupa el resto del espacio */
 .content {
-    flex: 1;               /* Ocupa todo el espacio sobrante */
-    padding: 10px;
-    background: #f0f0f0;
+    flex: 1;
+    padding: 2rem;
+    background-color: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Footer - siempre abajo */
+.content h1 {
+    color: var(--danger);
+    font-size: 64px;
+    margin: 0;
+    text-align: center;
+}
+
+.content p {
+    color: var(--text-secondary);
+    text-align: center;
+    font-size: 18px;
+}
+
 .footer {
-    height: 50px;
-    background: #c96666;
-    color: white;
+    height: auto;
+    background-color: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+    color: var(--text-muted);
     text-align: center;
 }

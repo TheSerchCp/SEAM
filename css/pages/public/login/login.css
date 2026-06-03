@@ -2,7 +2,38 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, #0d1428 50%, var(--bg-secondary) 100%);
+    padding: 20px;
+}
+
+.login-container .card {
+    width: 100%;
+    max-width: 420px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.1), 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.login-container .card-header {
+    margin-bottom: 20px;
+}
+
+.login-container .card-header h2 {
+    margin: 0;
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.login-container .card-body label {
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
 }
 
 

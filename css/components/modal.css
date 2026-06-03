@@ -1,53 +1,92 @@
-       .modal {
-                display: none;
-                position: fixed;
-                z-index: 1000;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0,0,0,0.4);
-            }
-            
-            .modal-content {
-                position: relative;
-                background-color: #fefefe;
-                margin: 5% auto;
-                width: 80%;
-                max-width: 500px;
-                border-radius: 8px;
-                animation: modalAnim 0.3s ease;
-            }
-            
-            @keyframes modalAnim {
-                from {top: -300px; opacity: 0}
-                to {top: 0; opacity: 1}
-            }
-            
-            .modal-header {
-                padding: 0px 20px;
-                background-color: #5cb85c;
-                color: white;
-                border-radius: 8px 8px 0 0;
-                display: flex;
-                justify-content: space-between;
-            }
-            
-            .modal-body {
-                padding: 20px;
-            }
-            
-            .modal-footer {
-                padding: 15px 20px;
-                background-color: #f1f1f1;
-                border-radius: 0 0 8px 8px;
-                display: flex;
-                justify-content: flex-end;
-                gap: 10px;
-            }
-            
-            .close {
-                color: white;
-                font-size: 28px;
-                cursor: pointer;
-            }
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    position: relative;
+    background-color: var(--bg-card);
+    margin: 5% auto;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    padding: 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--indigo) 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+.modal-header h2,
+.modal-header h3 {
+    margin: 0;
+    color: white;
+}
+
+.modal-body {
+    padding: 20px;
+    background-color: var(--bg-card);
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    background-color: var(--bg-secondary);
+    border-radius: 0 0 8px 8px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.close {
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    border: none;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.close:hover {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+}

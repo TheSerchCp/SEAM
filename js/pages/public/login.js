@@ -1,7 +1,7 @@
 import { loadCSS } from "../../utils/loadCss.js";
 import { state } from "../../services/general/state.js";
 import { PublicLayout } from "../../layout/public.layout.js";
-
+import { Loader } from "../../components/loader.js";
 export async function LoginPage() {
    await loadCSS("css/pages/public/login/login.css");
     return PublicLayout(`
@@ -36,6 +36,7 @@ export async function LoginPage() {
                 </div>
                 
             </div>
+            <div id="loader-container"></div>
         </div>
     `);
 }
@@ -45,6 +46,7 @@ export async function LoginPage() {
 
 //Escuchar los eventos del formulario con listeners
 document.addEventListener("submit", async (e) => {
+    const loader = await Loader({text: "Validando credenciales..."});
     if(e.target.id !== "login-form"){
         return;
     } 
@@ -56,11 +58,21 @@ document.addEventListener("submit", async (e) => {
     console.log("Datos de form login en json: ", formJson)
 
     if(!validateLogin(formJson)){
+        const loader = await Loader({});
+        loader.hide();
         return;
     }
 
-    state.user = findUserByEmail(formJson.email.trim());
-    location.hash = "/home";
+    
+    loader.show();
+    
+    setTimeout(() => {
+        const user = findUserByEmail(formJson.email.trim());
+        state.user = user;
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        loader.hide();
+        location.hash = "/home";
+    }, 1000);
 })
 
 

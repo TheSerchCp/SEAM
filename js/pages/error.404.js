@@ -1,22 +1,14 @@
 import { loadCSS } from "../utils/loadCss.js";
-import {PrivateLayout} from "../layout/private.layout.js";
+import { PrivateLayout } from "../layout/private.layout.js";
 
 export async function Error404Page() {
-    //await loadCSS("css/pages/error.404.css");
+    await loadCSS("css/pages/error.404.page.css");
     return PrivateLayout(`
-        <div class="layout">
-            <div class="header">
-                <h1>Contenido no disponible</h1>
-            </div>
-            <div class="main-container">
-                <main class="content">
-                    <h1>El contenido que estas accediendo no se encuentra disponible por el momento</h1>
-                </main>
-            </div>
-
-            <footer class="footer">
-                <p>Sergio Cortes Popoca</p>
-            </footer>
+        <div class="error-container">
+            <h1 class="error-code">404</h1>
+            <h2 class="error-title">Página no encontrada</h2>
+            <p class="error-message">El contenido que intentas acceder no está disponible o la ruta no existe.</p>
+            <button class="btn-info" onclick="location.hash = '#/home'">Volver al Inicio</button>
         </div>
     `);
 }
