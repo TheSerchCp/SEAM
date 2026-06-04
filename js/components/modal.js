@@ -50,7 +50,7 @@ export async function Modal({
                 // No cerramos el modal aquí si queremos validar antes de que onConfirm decida
                 if(onConfirm) onConfirm();
                 // Si onConfirm no lanza errores o cancela, removemos
-                modal.remove();
+               //closeModal()
             };
         }
 

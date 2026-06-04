@@ -1,7 +1,7 @@
 export async function Footer() {
     return `
-        <footer class="footer">
+        <div >
             Mi sistema SPA
-        </footer>
+        </div>
     `;
 }

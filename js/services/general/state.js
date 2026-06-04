@@ -5,24 +5,42 @@ export const state = {
     users: [
         {
             id:1,
-            email: "admin@school.com",
+            email: "admin@example.com",
             name: "Admin User",
-            password:"admin123",
+            password:"Admin123",
             role: "admin"
         },
         {
             id:2,
-            email: "profesor@school.com",
+            email: "profesor@example.com",
             name: "Juan Profesor",
-            password:"profesor123",
+            password:"Profesor123",
             role: "profesor"
         },
         {
             id:3,
-            email: "alumno@school.com",
+            email: "alumno@example.com",
             name: "Carlos Alumno",
-            password:"alumno123",
+            password:"Alumno123",
             role: "alumno"
+        }
+    ],
+
+    roles: [
+        {
+            id:1,
+            name: "admin",
+            description: "Administrador del sistema"
+        },
+        {
+            id: 2,
+            name: "profesor",
+            description: "Profesor encargado de impartir clases"
+        },
+        {
+            id: 3,
+            name: "alumno",
+            description: "Alumno que recibe clases"
         }
     ],
 

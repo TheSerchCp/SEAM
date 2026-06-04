@@ -1,6 +1,7 @@
 import { PrivateLayout } from "../../layout/private.layout.js";
 import { state } from "../../services/general/state.js";
 import { Modal } from "../../components/modal.js";
+import { userRepository } from "../../repositories/users/UserRepository.js";
 
 export async function UsersPage() {
 
@@ -17,6 +18,7 @@ export async function UsersPage() {
             <table>
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Nombre</th>
                         <th>Email</th>
                         <th>Rol</th>
@@ -24,7 +26,7 @@ export async function UsersPage() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${renderUsers()}
+                    ${await renderUsers()}
                 </tbody>
             </table>
         </div>
@@ -34,15 +36,17 @@ export async function UsersPage() {
     `;
 
     // Función recursiva para esperar a que los elementos existan en el DOM
-    const initEvents = () => {
+    const initEvents = async () => {
         const addBtn = document.getElementById("btn-addUser");
         const modalContainer = document.getElementById("modal-container");
 
+        const roles = await getRoles();
         if (!addBtn || !modalContainer) {
             setTimeout(initEvents, 50);
             return;
         }
-
+        
+        console.log("ROles: ", roles)
         addBtn.onclick = async () => {
             const modalHtml = await Modal({
                 title: "Agregar Usuario",
@@ -69,9 +73,9 @@ export async function UsersPage() {
                         <div class="flex flex-col">
                             <label>Rol</label>
                             <select name="role" class="input-base" required>
-                                <option value="alumno">Alumno</option>
-                                <option value="profesor">Profesor</option>
-                                <option value="admin">Admin</option>
+                            ${roles.map(rol =>
+                                `<option value="${rol.idRole}">${rol.roleName}</option>`
+                            ).join("")}
                             </select>
                         </div>
                     </form>
@@ -81,17 +85,15 @@ export async function UsersPage() {
                     const form = document.getElementById("user-form");
                     const formData = new FormData(form);
                     const data = Object.fromEntries(formData);
-
+                    data.role = Number(data.role);
+                    console.log("Data de form registro usuario: ", data)
                     if (!validateUser(data)) {
-                        return;
-                    }
-
-                    state.users.push({
-                        id: Math.max(...state.users.map(u => u.id)) + 1,
-                        ...data
-                    });
-
+                        console.warn("Datos invalidos al registrar")
+                    }else{
+                    const register =  await userRepository.registerUser(data);
+                    console.log("Registro usuario: ", register)
                     await reloadUsersPage();
+                    }
                 }
             });
             modalContainer.innerHTML = modalHtml;
@@ -103,21 +105,38 @@ export async function UsersPage() {
     return await PrivateLayout(htmlUser);
 }
 
-function renderUsers() {
-    if (state.users.length > 0) {
-        return state.users.map(us => `
+async function getRoles() {
+    return await userRepository.getRoles();
+}
+
+async function renderUsers() {
+  let users =   await userRepository.getAllUsers();
+
+    if (users.length > 0) {
+        return users.map(us => `
         <tr>
-            <td>${us.name}</td>
+            <td>${us.idUser}</td>
+            <td>${us.full_name}</td>
             <td>${us.email}</td>
-            <td>${us.role}</td>
+            <td>${us.roleName}</td>
             <td>
-                <button class="btn-warning btn-small" onclick="editUser(${us.id})">Editar</button>
-                <button class="btn-danger btn-small" onclick="deleteUser(${us.id})">Eliminar</button>
+                <button class="btn-warning btn-small" onclick="editUser(${us.idUser})">Editar</button>
+                <button class="btn-danger btn-small" onclick="deleteUser(${us.idUser})">Eliminar</button>
             </td>
         </tr>
         `).join("");
     } else {
         return "<tr><td colspan='4'>No hay usuarios registrados</td></tr>";
+    }
+}
+
+function renderRoles(roles){
+    if(roles){
+    return  roles.map(rol =>
+        `<option value="${rol.idRole}">${rol.roleName}</option>`
+    ).join("")
+    }else{
+        return `<option value="NoRole">No hay roles registrados.</option>`
     }
 }
 
