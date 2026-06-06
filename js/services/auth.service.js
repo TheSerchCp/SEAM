@@ -5,7 +5,7 @@ import { EventBus }  from '../core/EventBus.js';
 export const login = async (email, password) => {
     const data = await AuthRepo.login(email, password);
     if (!data) return null;
-
+    console.log("Usuario logeado obtenido: ", await data)
     session.user         = data.user;
     session.token        = data.token;
     session.permissions  = new Set(data.permissions ?? []);

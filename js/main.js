@@ -1,12 +1,14 @@
 import { loadRoute } from './core/Router.js';
 import { session }   from './state/session.state.js';
 import { EventBus }  from './core/EventBus.js';
+import './shared/components/Toast.js'; // Inicializar notificaciones globales en tiempo real
 
 // Hidratar estado desde localStorage
 const stored = localStorage.getItem('currentUser');
 if (stored) {
     try {
         const s = JSON.parse(stored);
+        console.log("DATOS SESSION: => ",s)
         session.user         = s.user         ?? s;
         session.token        = s.token        ?? null;
         session.permissions  = s.permissions  ? new Set(s.permissions) : null;

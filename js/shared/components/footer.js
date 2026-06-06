@@ -1,6 +1,7 @@
-import { loadCSS } from '../utils/loadCss.js';
-
 export async function Footer() {
-    await loadCSS("css/components/footer.css");
-    return `<p class="footer-text">&copy; ${new Date().getFullYear()} SEAM</p>`;
+    return `
+        <p class="flex items-center justify-center gap-2 px-4 py-4 text-center text-xs uppercase tracking-[0.3em] text-gray-400">
+            <i class="fa-regular fa-copyright"></i>
+            <span>${new Date().getFullYear()} SEAM</span>
+        </p>`;
 }

@@ -1,55 +1,93 @@
-import { loadCSS } from '../utils/loadCss.js';
-
-/**
- * Modal reutilizable. Genera HTML, lo inyecta y adjunta eventos automáticamente.
- * @param {{ title, body, onConfirm?, onCancel?, confirmText?, cancelText?, confirmBtnId? }} props
- * @returns {Promise<string>} HTML string
- */
-export async function Modal({ title, body, onConfirm, onCancel, confirmText = "Guardar", cancelText = "Cancelar", confirmBtnId = null }) {
-    await loadCSS("css/components/modal.css");
-
-    const modalId = `modal-${Date.now()}`;
+export async function Modal({
+    title = 'Confirmar',
+    body = '',
+    onConfirm = null,
+    onCancel = null,
+    confirmText = 'Confirmar',
+    cancelText = 'Cancelar',
+    confirmBtnId = null,
+    isDanger = false,
+} = {}) {
+    const confirmBtnColor = isDanger 
+        ? 'bg-red-600 hover:bg-red-700 border-red-600' 
+        : 'bg-blue-600 hover:bg-blue-700 border-blue-600';
 
     const modalHtml = `
-    <div id="${modalId}" class="modal" style="display: block;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>${title}</h2>
-                <span class="close">&times;</span>
-            </div>
-            <div class="modal-body">${body}</div>
-            <div class="modal-footer">
-                <button class="btn-default">${cancelText}</button>
-                <button class="btn-success" ${confirmBtnId ? `id="${confirmBtnId}"` : ''}>${confirmText}</button>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div class="relative w-full max-w-md overflow-hidden rounded-xl border border-gray-700/60 bg-gray-900/95 shadow-2xl shadow-black/50 animate-in fade-in zoom-in-95 duration-200">
+                <!-- Header -->
+                <div class="border-b border-gray-700/40 px-6 py-4">
+                    <h2 class="text-lg font-bold text-white">${title}</h2>
+                </div>
+
+                <!-- Body -->
+                <div class="px-6 py-6 text-gray-200">
+                    ${body}
+                </div>
+
+                <!-- Footer -->
+                <div class="flex gap-3 border-t border-gray-700/40 bg-gray-800/30 px-6 py-4">
+                    <button 
+                        id="btn-cancel"
+                        class="flex-1 rounded-lg border border-gray-600 bg-gray-800 px-4 py-2.5 text-sm font-semibold text-gray-200 transition hover:bg-gray-700 hover:border-gray-500">
+                        ${cancelText}
+                    </button>
+                    <button 
+                        id="btn-confirm"
+                        ${confirmBtnId ? `id="${confirmBtnId}"` : ''}
+                        class="flex-1 rounded-lg border ${confirmBtnColor} px-4 py-2.5 text-sm font-semibold text-white transition">
+                        ${confirmText}
+                    </button>
+                </div>
             </div>
         </div>
-    </div>`;
+    `;
 
-    const attachEvents = () => {
-        const modal = document.getElementById(modalId);
-        if (!modal) { setTimeout(attachEvents, 10); return; }
+    // Inyectar HTML al DOM
+    const tempContainer = document.createElement('div');
+    tempContainer.innerHTML = modalHtml;
+    const modal = tempContainer.firstElementChild;
+    document.body.appendChild(modal);
 
-        const closeBtn   = modal.querySelector(".close");
-        const cancelBtn  = modal.querySelector(".btn-default");
-        const confirmBtn = modal.querySelector(".btn-success");
+    // Adjuntar event listeners
+    const cancelBtn = modal.querySelector('#btn-cancel');
+    const confirmBtn = modal.querySelector('#btn-confirm') || (confirmBtnId ? modal.querySelector(`#${confirmBtnId}`) : null);
+    const backdrop = modal;
 
-        const closeModal = () => { modal.remove(); if (onCancel) onCancel(); };
+    // Cerrar al hacer click en cancelar
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            modal.remove();
+            if (typeof onCancel === 'function') onCancel();
+        });
+    }
 
-        if (closeBtn)  closeBtn.onclick  = closeModal;
-        if (cancelBtn) cancelBtn.onclick = closeModal;
-
-        if (confirmBtn) {
-            confirmBtn.onclick = async () => {
-                if (onConfirm) {
-                    const shouldClose = await onConfirm();
-                    if (shouldClose !== false) closeModal();
-                }
-            };
+    // Cerrar al hacer click en el backdrop
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+            modal.remove();
+            if (typeof onCancel === 'function') onCancel();
         }
+    });
 
-        window.onclick = (e) => { if (e.target === modal) closeModal(); };
-    };
-
-    setTimeout(attachEvents, 0);
-    return modalHtml;
+    // Confirmar
+    if (confirmBtn && typeof onConfirm === 'function') {
+        confirmBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            confirmBtn.disabled = true;
+            try {
+                const result = await onConfirm();
+                if (result?.success !== false) {
+                    modal.remove();
+                }
+            } finally {
+                confirmBtn.disabled = false;
+            }
+        });
+    } else if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => {
+            modal.remove();
+        });
+    }
 }

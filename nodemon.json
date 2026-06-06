@@ -1,0 +1,19 @@
+{
+  "watch": [
+    "server.js",
+    "js/**/*.js"
+  ],
+  "ignore": [
+    "node_modules/**/*",
+    ".git/**/*",
+    "css/**/*",
+    "*.css"
+  ],
+  "ext": "js,mjs",
+  "delay": "500",
+  "verbose": true,
+  "legacyWatch": false,
+  "events": {
+    "restart": "clear"
+  }
+}

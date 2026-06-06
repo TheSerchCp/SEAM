@@ -17,7 +17,26 @@ const routes = {
     "/login": LoginPage,
 };
 
+// Lista de funciones de limpieza registradas por la página activa.
+// Se ejecutan al navegar a otra ruta para evitar handlers sobre DOM desmontado.
+const _cleanupFns = [];
+
+/**
+ * Registra una función de limpieza que se ejecutará al abandonar la página actual.
+ * Las páginas deben llamar a esta función para desuscribirse de EventBus, cancelar
+ * timers, etc.
+ * @param {() => void} fn
+ */
+export function registerPageCleanup(fn) {
+    _cleanupFns.push(fn);
+}
+
 export async function loadRoute() {
+    // Ejecutar y vaciar todas las funciones de limpieza de la página anterior
+    while (_cleanupFns.length) {
+        try { _cleanupFns.pop()(); } catch { /* no bloquear la navegación */ }
+    }
+
     const path = location.hash.slice(1) || "/";
     const pathSegments = path.split('/');
     const basePath = '/' + pathSegments[1];

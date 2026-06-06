@@ -1,165 +1,265 @@
-import { PrivateLayout } from "../../layout/PrivateLayout.js";
+import { PrivateLayout } from '../../layout/PrivateLayout.js';
 import { getUsers, getUserById, createUser, updateUser, removeUser } from '../../services/users.service.js';
 import { getRoles } from '../../services/roles.service.js';
 import { FormModal } from '../../shared/components/FormModal.js';
 import { Modal } from '../../shared/components/Modal.js';
 import { Table } from '../../shared/components/ui/Table.js';
 import { FormValidator } from '../../shared/utils/FormValidator.js';
+import { EventBus } from '../../core/EventBus.js';
+import { shouldUpdatePage } from '../../core/OperationListeners.js';
+import { registerPageCleanup } from '../../core/Router.js';
 
 const USER_SCHEMA = {
     name: { required: true, text: true, minLength: 2 },
     email: { required: true, email: true },
     password: { required: true, password: true },
-    confirmPassword: { required: true, password: true, match: "password" }
+    confirmPassword: { required: true, password: true, match: 'password' }
+};
+
+const USER_EDIT_SCHEMA = {
+    name: { required: true, text: true, minLength: 2 },
+    email: { required: true, email: true },
+    password: { password: true },
+    confirmPassword: {
+        custom: (val, _, formData) => {
+            const pwd = formData.get('password') ?? '';
+            if (!pwd.trim()) return true;
+            if (!val.trim()) return 'Confirma la nueva contraseña';
+            return val === pwd || 'Los campos no coinciden';
+        }
+    },
 };
 
 const USER_COLUMNS = [
-    { label: "#", key: "idUser" },
-    { label: "Nombre", key: "full_name" },
-    { label: "Email", key: "email" },
-    { label: "Rol", key: "roleName" },
+    { label: '#', key: 'idUser' },
+    { label: 'Nombre', key: 'full_name' },
+    { label: 'Email', key: 'email' },
+    { label: 'Rol', key: 'roleName' },
 ];
 
-export async function UsersPage() {
+const addButtonClasses = 'inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-500 px-3 py-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-blue-600 active:bg-blue-700';
+const editButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-amber-500 bg-amber-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-amber-600';
+const deleteButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-red-500 bg-red-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-red-600';
+
+async function renderPage() {
     const users = await getUsers();
 
-    const htmlUser = `
-    <div class="admin-page">
-        <h1>Gestionar Usuarios</h1>
-        <div class="flex">
-            <button id="btn-addUser" class="btn-info">Agregar Usuario</button>
-        </div>
-        <hr>
-        ${Table({
-            columns: USER_COLUMNS,
-            rows: users,
-            tbodyId: "users-body",
-            emptyMessage: "No hay usuarios registrados",
-            actions: (u) => `
-                <button class="btn-warning btn-small" onclick="editUser(${u.idUser})">Editar</button>
-                <button class="btn-danger btn-small"  onclick="deleteUser(${u.idUser})">Eliminar</button>`
-        })}
-        <div id="modal-container"></div>
-    </div>`;
+    return `
+        <div class="w-full space-y-5 rounded-xl border border-gray-700/60 bg-gray-900/80 p-4 sm:p-6 shadow-xl shadow-black/20">
+            <!-- Header Section -->
+            <div class="flex flex-col gap-3 border-b border-gray-700/40 pb-4 sm:gap-4 sm:pb-6">
+                <div class="flex flex-col gap-2 sm:gap-3">
+                    <span class="text-xs font-bold uppercase tracking-[0.25em] text-blue-400">Administración</span>
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h1 class="text-xl font-bold text-white sm:text-2xl">Gestionar Usuarios</h1>
+                            <p class="mt-1 text-xs text-gray-400 sm:text-sm">Administra los usuarios del sistema</p>
+                        </div>
+                        <button id="btn-addUser" class="${addButtonClasses}">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span class="hidden sm:inline">Agregar</span>
+                            <span class="sm:hidden">Nuevo</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="flex flex-col gap-3">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 class="text-sm font-semibold text-white sm:text-base">Listado</h2>
+                        <p class="text-xs text-gray-500">Desliza para ver todas las columnas</p>
+                    </div>
+                    <span class="w-fit rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-users text-xs"></i>
+                        <span>${users.length} registrados</span>
+                    </span>
+                </div>
+                <div id="users-table-wrap" class="w-full overflow-hidden">
+                    ${Table({
+                        columns: USER_COLUMNS,
+                        rows: users,
+                        tbodyId: 'users-body',
+                        emptyMessage: 'No hay usuarios registrados',
+                        actions: (user) => `
+                            <button class="${editButtonClasses}" onclick="window.editUser?.(${user.idUser})" title="Editar"><i class="fa-solid fa-pen"></i><span class="hidden sm:inline">Editar</span></button>
+                            <button class="${deleteButtonClasses}" onclick="window.deleteUser?.(${user.idUser})" title="Eliminar"><i class="fa-solid fa-trash"></i><span class="hidden sm:inline">Eliminar</span></button>`
+                    })}
+                </div>
+            </div>
+
+            <div id="modal-container"></div>
+        </div>`;
+}
+
+export async function UsersPage() {
+    const html = await renderPage();
+    const _unsubscribers = [];
 
     const initEvents = async () => {
-        const addBtn = document.getElementById("btn-addUser");
-        const modalContainer = document.getElementById("modal-container");
+        const addBtn = document.getElementById('btn-addUser');
+        const modalContainer = document.getElementById('modal-container');
         if (!addBtn || !modalContainer) { setTimeout(initEvents, 50); return; }
 
         const roles = await getRoles();
-        const roleOptions = roles.map(r => ({ value: r.idRole, label: r.roleName }));
+        const roleOptions = roles.map(role => ({ value: role.idRole, label: role.roleName }));
 
-        addBtn.onclick = async () => {
-            let validator;
+        // Store references globally
+        window.usersModalContainer = modalContainer;
+        window.usersRoleOptions = roleOptions;
+        window.usersEditSchema = USER_EDIT_SCHEMA;
 
-            modalContainer.innerHTML = await FormModal({
-                title: "Agregar Usuario",
-                formId: "user-form",
-                fields: [
-                    { type: "text", name: "name", label: "Nombre", required: true },
-                    { type: "email", name: "email", label: "Email", required: true },
-                    { type: "password", name: "password", label: "Contraseña", required: true },
-                    { type: "password", name: "confirmPassword", label: "Confirmar Contraseña", required: true },
-                    { type: "select", name: "role", label: "Rol", options: roleOptions, required: true }
-                ],
-                confirmText: "Agregar",
-                onConfirm: async (data) => {
-                    if (!validator.validate()) return false;
-                    data.role = Number(data.role);
-                    try {
-                        await createUser({ full_name: data.name, email: data.email, password: data.password, roleId: data.role });
-                        await reloadUsersTable();
-                        return true;
-                    } catch (e) {
-                        alert(e.message);
-                        return false;
-                    }
-                }
-            });
-
-            validator = new FormValidator("user-form", USER_SCHEMA, { buttonId: "user-form-confirm" });
-            validator.attach();
+        // Función para actualizar la tabla
+        const updateUsersTable = async () => {
+            const newHtml = await renderPage();
+            const wrapper = document.getElementById('users-table-wrap');
+            
+            if (!wrapper) {
+                console.warn('[users.page] No se encontró #users-table-wrap');
+                return;
+            }
+            
+            // Reemplazar SOLO el contenedor de la tabla, no el padre
+            const container = document.createElement('div');
+            container.innerHTML = newHtml;
+            const newWrapper = container.querySelector('#users-table-wrap');
+            
+            if (newWrapper) {
+                wrapper.replaceWith(newWrapper);
+                setTimeout(initEvents, 0);
+            }
         };
+
+        // Listener para recargar la página cuando se emita page:reload
+        const unsub = EventBus.on('page:reload', updateUsersTable);
+        _unsubscribers.push(unsub);
+
+        // Escuchar cambios de datos en tiempo real desde socket
+        const unsubSocket = EventBus.on('data:changed', async (payload) => {
+            // Verificar si esta operación afecta a la página de usuarios
+            if (shouldUpdatePage('users', payload?.operation)) {
+                console.log(`[users.page] Actualizando tabla por data:changed en operación: ${payload.operation}`);
+                
+                // Ignorar si fue iniciado por este cliente (ya emitió page:reload localmente)
+                if (payload?.initiatorSocketId === EventBus.socketId) {
+                    console.log(`[users.page] Ignorando data:changed porque fue iniciado por este cliente (ya tiene page:reload)`);
+                    return;
+                }
+                
+                // Para otros clientes, actualizar la tabla
+                await updateUsersTable();
+            }
+        });
+        _unsubscribers.push(unsubSocket);
+
+        addBtn.addEventListener('click', async () => {
+            modalContainer.innerHTML = await FormModal({
+                title: 'Agregar Usuario',
+                formId: 'user-form',
+                fields: [
+                    { name: 'name', label: 'Nombre', type: 'text', placeholder: 'Juan Pérez', required: true },
+                    { name: 'email', label: 'Email', type: 'email', placeholder: 'juan@example.com', required: true },
+                    { name: 'password', label: 'Contraseña', type: 'password', placeholder: '••••••••', required: true },
+                    { name: 'confirmPassword', label: 'Confirmar Contraseña', type: 'password', placeholder: '••••••••', required: true },
+                    { name: 'idRole', label: 'Rol', type: 'select', options: roleOptions, required: true },
+                ],
+                schema: USER_SCHEMA,
+                onConfirm: async (formData) => {
+                    try {
+                        console.log("Datyos de formulario: ", formData)
+                        const userData = {
+                            full_name: formData.name,
+                            email: formData.email,
+                            password: formData.password,
+                            roleId: parseInt(formData.idRole),
+                        };
+                        await createUser(userData);
+                        EventBus.emit('page:reload');
+                        return { success: true };
+                    } catch (error) {
+                        return { success: false, error: error.message };
+                    }
+                },
+            });
+        });
     };
 
-    initEvents();
-    return await PrivateLayout(htmlUser);
-}
-
-async function renderUsers() {
-    const users = await getUsers();
-    return Table({
-        columns: USER_COLUMNS,
-        rows: users,
-        emptyMessage: "No hay usuarios registrados",
-        actions: (u) => `
-            <button class="btn-warning btn-small" onclick="editUser(${u.idUser})">Editar</button>
-            <button class="btn-danger btn-small"  onclick="deleteUser(${u.idUser})">Eliminar</button>`
+    // Registrar función de limpieza
+    registerPageCleanup(() => {
+        _unsubscribers.forEach(unsub => unsub?.());
+        _unsubscribers.length = 0;
+        delete window.usersModalContainer;
+        delete window.usersRoleOptions;
+        delete window.usersEditSchema;
     });
+
+    setTimeout(initEvents, 0);
+
+    return PrivateLayout(html);
 }
 
-async function reloadUsersTable() {
-    const container = document.querySelector(".table-container");
-    if (container) container.outerHTML = await renderUsers();
-}
+window.editUser = async function(idUser) {
+    if (!window.usersModalContainer) {
+        console.warn('Modal container no disponible, reintentando...');
+        setTimeout(() => window.editUser(idUser), 100);
+        return;
+    }
 
-window.deleteUser = async function(id) {
-    const modalContainer = document.getElementById("modal-container");
-    const infoUser = await getUserById(id);
+    const modalContainer = window.usersModalContainer;
+    const user = await getUserById(idUser);
 
-    modalContainer.innerHTML = await Modal({
-        title: `Eliminar usuario: ${infoUser.full_name}`,
-        body: `<p>Este usuario será removido del sistema. La acción no puede revertirse. ¿Estás seguro?</p>`,
-        confirmText: "Eliminar",
-        onConfirm: async () => {
+    modalContainer.innerHTML = await FormModal({
+        title: 'Editar Usuario',
+        formId: 'user-form-edit',
+        fields: [
+            { name: 'name', label: 'Nombre', type: 'text', value: user.full_name, required: true },
+            { name: 'email', label: 'Email', type: 'email', value: user.email, required: true },
+            { name: 'password', label: 'Nueva Contraseña (dejar vacío para no cambiar)', type: 'password', placeholder: '••••••••' },
+            { name: 'confirmPassword', label: 'Confirmar Contraseña', type: 'password', placeholder: '••••••••' },
+            { name: 'idRole', label: 'Rol', type: 'select', value: user.idRole, options: window.usersRoleOptions, required: true },
+        ],
+        schema: window.usersEditSchema,
+        onConfirm: async (formData) => {
             try {
-                await removeUser(infoUser.idUser);
-                await reloadUsersTable();
-                return true;
-            } catch (e) {
-                alert(e.message);
-                return false;
+                const userData = {
+                    full_name: formData.name,
+                    email: formData.email,
+                    roleId: parseInt(formData.idRole),
+                };
+                if (formData.password?.trim()) {
+                    userData.password = formData.password;
+                }
+                await updateUser(idUser, userData);
+                EventBus.emit('page:reload');
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
             }
-        }
+        },
     });
 };
 
-window.editUser = async function(id) {
-    const modalContainer = document.getElementById("modal-container");
-    const [infoUser, roles] = await Promise.all([
-        getUserById(id),
-        getRoles()
-    ]);
-    const roleOptions = roles.map(r => ({ value: r.idRole, label: r.roleName }));
+window.deleteUser = async function(idUser) {
+    if (!window.usersModalContainer) {
+        console.warn('Modal container no disponible, reintentando...');
+        setTimeout(() => window.deleteUser(idUser), 100);
+        return;
+    }
 
-    let validator;
-
-    modalContainer.innerHTML = await FormModal({
-        title: "Editar Usuario",
-        formId: "user-edit-form",
-        fields: [
-            { type: "text",     name: "name",            label: "Nombre",              value: infoUser.full_name, required: true },
-            { type: "email",    name: "email",           label: "Email",               value: infoUser.email,     required: true },
-            { type: "password", name: "password",        label: "Nueva Contraseña",    required: true },
-            { type: "password", name: "confirmPassword", label: "Confirmar Contraseña",required: true },
-            { type: "select", name: "role", label: "Rol", options: roleOptions, selected: infoUser.roleId, required: true }
-        ],
-        confirmText: "Guardar",
-        onConfirm: async (data) => {
-            if (!validator.validate()) return false;
-            data.role = Number(data.role);
+    await Modal({
+        title: '¿Eliminar usuario?',
+        body: '<p class="text-sm text-gray-300">Esta acción <strong>no se puede deshacer</strong>. ¿Estás seguro?</p>',
+        onConfirm: async () => {
             try {
-                await updateUser(infoUser.idUser, { full_name: data.name, email: data.email, password: data.password, roleId: data.role });
-                await reloadUsersTable();
-                return true;
-            } catch (e) {
-                alert(e.message);
-                return false;
+                await removeUser(idUser);
+                EventBus.emit('page:reload');
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
             }
-        }
+        },
+        confirmText: 'Eliminar',
+        isDanger: true,
     });
-
-    validator = new FormValidator("user-edit-form", USER_SCHEMA, { buttonId: "user-edit-form-confirm" });
-    validator.attach();
 };

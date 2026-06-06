@@ -1,52 +1,37 @@
-import { loadCSS }       from '../../shared/utils/loadCss.js';
 import { PublicLayout }  from '../../layout/PublicLayout.js';
 import { Loader }        from '../../shared/components/Loader.js';
 import { login }         from '../../services/auth.service.js';
 import { FormValidator } from '../../shared/utils/FormValidator.js';
 import { Form }          from '../../shared/components/ui/Form.js';
 
-export async function LoginPage() {
-   await loadCSS('css/pages/public/login/login.css');
-  //<button type="button" class="btn-link"  id="btn-to-register">¿No tienes cuenta? Regístrate</button>
-  /*
-              <div class="card" id="register-card">
-                <div class="card-header"><h2>Registro</h2></div>
-                <div class="card-body">
-                    ${Form({
-                        id: 'register-form',
-                        fields: [
-                            { type: 'email',    name: 'email',           label: 'Correo',               required: true },
-                            { type: 'password', name: 'password',        label: 'Contraseña',           required: true },
-                            { type: 'password', name: 'confirmPassword', label: 'Confirmar Contraseña', required: true }
-                        ],
-                        actions: `
-                            <button type="button" class="btn-info" id="btn-register">Registrarse</button>
-                            <button type="button" class="btn-link" id="btn-back">¿Ya tienes cuenta? Inicia sesión</button>
-                        `
-                    })}
-                </div>
-            </div>
-  
-  */
-   const loginTemplate = `
-        <div class="login-container" id="login-container">
+const primaryButton = 'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60';
 
-            <div class="card" id="login-card">
-                <div class="card-header"><h2>Login</h2></div>
-                <div class="card-body">
+export async function LoginPage() {
+    const loginTemplate = `
+        <div id="login-container" class="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 px-4 py-10">
+            <div id="login-card" class="w-full max-w-md overflow-hidden rounded-3xl border border-gray-700 bg-gray-900/95 shadow-2xl shadow-black/30">
+                <div class="border-b border-gray-700 bg-gradient-to-r from-blue-600/90 to-cyan-500/90 px-6 py-8 text-center">
+                    <span class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-2xl text-white shadow-lg shadow-black/20">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </span>
+                    <h2 class="text-3xl font-bold text-white">Iniciar sesión</h2>
+                    <p class="mt-2 text-sm text-blue-100">Accede al panel administrativo de SEAM</p>
+                </div>
+                <div class="px-6 py-8">
                     ${Form({
                         id: 'login-form',
                         fields: [
-                            { type: 'email',    name: 'email',    label: 'Correo',     required: true },
-                            { type: 'password', name: 'password', label: 'Contraseña', required: true }
+                            { type: 'email', name: 'email', label: 'Correo', placeholder: 'tu@correo.com', required: true },
+                            { type: 'password', name: 'password', label: 'Contraseña', placeholder: '••••••••', required: true }
                         ],
                         actions: `
-                            <button type="button" class="btn-info"  id="btn-login">Ingresar</button>
-                        `
+                            <button type="button" class="${primaryButton}" id="btn-login">
+                                <i class="fa-solid fa-right-to-bracket"></i>
+                                <span>Ingresar</span>
+                            </button>`
                     })}
                 </div>
             </div>
-
             <div id="loader-container"></div>
         </div>
     `;
