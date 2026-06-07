@@ -26,6 +26,7 @@ export async function FormModal({
         cancelText,
         confirmBtnId,
         onConfirm: async () => {
+            console.log('FormModal onConfirm triggered');
             const form = document.getElementById(formId);
             if (!form) {
                 console.error(`Formulario no encontrado: ${formId}`);
@@ -38,15 +39,12 @@ export async function FormModal({
     });
 
     // Initialize select fields y validador después de renderizar
-    setTimeout(() => {
-        initSelectFields();
-        
-        // Inicializar validador con el botón
-        if (Object.keys(schema).length > 0) {
-            const validator = new FormValidator(formId, schema, { buttonId: confirmBtnId });
-            validator.attach();
-        }
-    }, 50);
+    initSelectFields();
+
+    if (Object.keys(schema).length > 0) {
+        const validator = new FormValidator(formId, schema, { buttonId: confirmBtnId });
+        validator.attach();
+    }
 
     return modalHtml;
 }

@@ -14,3 +14,7 @@
     @apply transition;
   }
 }
+
+@theme {
+  --breakpoint-xs: 27.5rem; /* 440px */
+}

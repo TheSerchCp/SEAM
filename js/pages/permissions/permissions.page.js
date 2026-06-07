@@ -2,17 +2,19 @@ import { PrivateLayout } from '../../layout/PrivateLayout.js';
 import { getAllPermissions, getPermissionsByRole, createPermission, removePermission, assignPermissionToRole, removePermissionFromRole } from '../../services/permissions.service.js';
 import { getRoles } from '../../services/roles.service.js';
 import { Table } from '../../shared/components/ui/Table.js';
+import { Button } from '../../shared/components/ui/Button.js';
 import { SelectField } from '../../shared/components/ui/SelectField.js';
 import { Modal } from '../../shared/components/Modal.js';
+import { FormModal } from '../../shared/components/FormModal.js';
 import { initSelectFields } from '../../shared/components/ui/SelectField.js';
 import { EventBus } from '../../core/EventBus.js';
 import { shouldUpdatePage } from '../../core/OperationListeners.js';
 import { registerPageCleanup } from '../../core/Router.js';
 
-const addButtonClasses = 'inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-500 px-3 py-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-blue-600';
-const assignButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-emerald-500 bg-emerald-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-emerald-600';
-const deleteButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-red-500 bg-red-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-red-600';
-const unassignButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-amber-500 bg-amber-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-amber-600';
+const addButtonClasses = 'inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-500 px-3 py-3.5 text-xs sm:text-sm font-semibold text-white transition hover:bg-blue-600 hover:cursor-pointer';
+const assignButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-emerald-500 bg-emerald-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-emerald-600 hover:cursor-pointer';
+const deleteButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-red-500 bg-red-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-red-600 hover:cursor-pointer';
+const unassignButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-amber-500 bg-amber-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-amber-600 hover:cursor-pointer';
 
 const PERMISSION_COLUMNS = [
     { label: 'Nombre', key: 'nameUri' },
@@ -23,6 +25,12 @@ const ROLE_PERMISSION_COLUMNS = [
     { label: 'Nombre', key: 'nameUri' },
     { label: 'Descripción', key: 'description' },
 ];
+
+const PERM_SCHEMA = {
+    name: { required: true, route: true },
+    desc: { required: true, text: true },
+};
+
 
 async function renderPage(roleOptions) {
     return `
@@ -47,11 +55,15 @@ async function renderPage(roleOptions) {
                         placeholder: '-- Selecciona un rol --',
                     })}
                 </div>
-                <button id="btn-add-permission" class="${addButtonClasses} w-full sm:w-auto">
-                    <i class="fa-solid fa-plus"></i>
-                    <span class="hidden sm:inline">Agregar Permiso</span>
-                    <span class="sm:hidden">Nuevo</span>
-                </button>
+                ${Button({
+                    id:              'btn-add-permission',
+                    className:       `${addButtonClasses} w-full sm:w-auto`,
+                    icon:            'fa-solid fa-plus',
+                    buttonText:      'Nuevo',
+                    hasTooltip:      true,
+                    tooltipText:     'Agregar permiso',
+                    tooltipPosition: 'bottom',
+                })}
             </div>
 
             <!-- Two Column Layout for Tables (Responsive) -->
@@ -138,8 +150,8 @@ export async function PermisosPage() {
                 rows: available,
                 emptyMessage: 'No hay permisos disponibles',
                 actions: (p) => `
-                    ${roleId ? `<button class="${assignButtonClasses}" onclick="window.handleAssignPerm?.(${p.idPermission})" title="Asignar"><i class="fa-solid fa-arrow-right"></i><span class="hidden sm:inline">Asignar</span></button>` : ''}
-                    <button class="${deleteButtonClasses}" onclick="window.handleDeletePerm?.(${p.idPermission})" title="Eliminar"><i class="fa-solid fa-trash"></i><span class="hidden sm:inline">Eliminar</span></button>`
+                    ${roleId ? Button({ className: assignButtonClasses,  action: `window.handleAssignPerm?.(${p.idPermission})`,  icon: 'fa-solid fa-arrow-right', buttonText: 'Asignar', hasTooltip: true, tooltipText: 'Asignar al rol',     tooltipPosition: 'top' }) : ''}
+                    ${Button({         className: deleteButtonClasses,   action: `window.handleDeletePerm?.(${p.idPermission})`,  icon: 'fa-solid fa-trash',       buttonText: 'Eliminar', hasTooltip: true, tooltipText: 'Eliminar permiso',   tooltipPosition: 'top' })}`
             });
 
             rolePermTable.innerHTML = Table({
@@ -147,43 +159,37 @@ export async function PermisosPage() {
                 rows: roleId ? normalizedAssigned : [],
                 emptyMessage: roleId ? 'Sin permisos asignados' : 'Selecciona un rol',
                 actions: (p) => `
-                    <button class="${unassignButtonClasses}" onclick="window.handleUnassignPerm?.(${p.idPermission})" title="Quitar"><i class="fa-solid fa-arrow-left"></i><span class="hidden sm:inline">Quitar</span></button>
-                    <button class="${deleteButtonClasses}" onclick="window.handleDeletePerm?.(${p.idPermission})" title="Eliminar"><i class="fa-solid fa-trash"></i><span class="hidden sm:inline">Eliminar</span></button>`
+                    ${Button({ className: unassignButtonClasses, action: `window.handleUnassignPerm?.(${p.idPermission})`, icon: 'fa-solid fa-arrow-left', buttonText: 'Quitar',   hasTooltip: true, tooltipText: 'Quitar del rol',     tooltipPosition: 'top' })}
+                    ${Button({ className: deleteButtonClasses,   action: `window.handleDeletePerm?.(${p.idPermission})`,  icon: 'fa-solid fa-trash',      buttonText: 'Eliminar', hasTooltip: true, tooltipText: 'Eliminar permiso',   tooltipPosition: 'top' })}`
             });
         };
 
         addBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            const formHtml = `
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2">Nombre del permiso</label>
-                        <input type="text" id="perm-name" placeholder="ej: ver_reportes" class="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2">Descripción</label>
-                        <input type="text" id="perm-desc" placeholder="ej: Permite visualizar reportes" class="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
-                    </div>
-                </div>`;
 
-            await Modal({
+
+            await FormModal({
                 title: 'Nuevo Permiso',
-                body: formHtml,
-                confirmBtnId: 'perm-confirm',
-                onConfirm: async () => {
-                    const name = document.getElementById('perm-name')?.value || '';
-                    const desc = document.getElementById('perm-desc')?.value || '';
-                    if (!name.trim()) {
-                        alert('El nombre es obligatorio');
-                        return { success: false };
-                    }
+                formId: 'perm-form',
+                   fields: [
+                    { name: 'name', label: 'Nombre del permiso', type: 'text', placeholder: 'ej:GET /api/ver_reportes', required: true },
+                    { name: 'desc', label: 'Descripción', type: 'text', placeholder: 'jej: Visualizar reportes generados', required: true },
+                ],
+                schema: PERM_SCHEMA,
+                type: 'success',
+                onConfirm: async (formData) => {
                     try {
-                        await createPermission({ nameUri: name, description: desc });
+                        const permData = {
+                            name: formData.name?.trim(),
+                            description: formData.desc?.trim(),
+                        }
+                        console.log('Creating permission with data:', permData);
+                        await createPermission({ nameUri: permData.name, description: permData.description });
                         await reloadPanels();
+                        EventBus.emit('page:reload');
                         return { success: true };
                     } catch (e) {
-                        alert(e.message);
-                        return { success: false };
+                        return { success: false,error: e.message || 'Error al crear permiso' };
                     }
                 },
                 confirmText: 'Crear',
@@ -299,6 +305,6 @@ window.handleDeletePerm = async function(permId) {
             }
         },
         confirmText: 'Eliminar',
-        isDanger: true,
+        type: 'danger',
     });
 };

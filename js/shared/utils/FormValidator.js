@@ -8,6 +8,7 @@ const RULES = {
     password:  (val)            => validators.validatePassword(val.trim()) || 'Mínimo 8 caracteres, una mayúscula, una minúscula y un número',
     text:      (val)            => validators.validateText(val.trim())     || 'Solo se permiten letras',
     match:     (val, field, fd) => val === fd.get(field)                   || 'Los campos no coinciden',
+    route: (val)            => validators.validateRoute(val.trim())     || 'Formato de ruta inválido',
     custom:    (val, fn, fd)    => fn(val, fd),
 };
 
@@ -131,16 +132,40 @@ export class FormValidator {
         const field = this.form?.elements[fieldName];
         if (!field) return;
 
-        field.classList.remove(...baseFieldClasses);
+        // Para SelectField custom: el input es hidden; aplicar bordes al trigger button
+        const triggerId = field.dataset?.selectTrigger;
+        const targetEl = triggerId ? document.getElementById(triggerId) : null;
 
-        if (state === 'error') {
-            field.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/10');
-            field.setAttribute('aria-invalid', 'true');
-        } else if (state === 'success' && String(field.value ?? '').trim()) {
-            field.classList.add('border-emerald-500', 'focus:border-emerald-500', 'focus:ring-emerald-500/10');
-            field.removeAttribute('aria-invalid');
+        if (targetEl) {
+            const selectClear = [
+                'border-red-500', 'border-emerald-500', 'border-gray-600',
+                'focus:border-red-500', 'focus:border-emerald-500', 'focus:border-blue-500',
+                'focus:ring-red-500/10', 'focus:ring-emerald-500/10', 'focus:ring-blue-500/20',
+            ];
+            targetEl.classList.remove(...selectClear);
+
+            if (state === 'error') {
+                targetEl.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/10');
+                field.setAttribute('aria-invalid', 'true');
+            } else if (state === 'success' && String(field.value ?? '').trim()) {
+                targetEl.classList.add('border-emerald-500', 'focus:border-emerald-500', 'focus:ring-emerald-500/10');
+                field.removeAttribute('aria-invalid');
+            } else {
+                targetEl.classList.add('border-gray-600', 'focus:border-blue-500', 'focus:ring-blue-500/20');
+                field.removeAttribute('aria-invalid');
+            }
         } else {
-            field.removeAttribute('aria-invalid');
+            field.classList.remove(...baseFieldClasses);
+
+            if (state === 'error') {
+                field.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/10');
+                field.setAttribute('aria-invalid', 'true');
+            } else if (state === 'success' && String(field.value ?? '').trim()) {
+                field.classList.add('border-emerald-500', 'focus:border-emerald-500', 'focus:ring-emerald-500/10');
+                field.removeAttribute('aria-invalid');
+            } else {
+                field.removeAttribute('aria-invalid');
+            }
         }
 
         const errorIcon = document.getElementById(`${fieldName}-error-icon`);

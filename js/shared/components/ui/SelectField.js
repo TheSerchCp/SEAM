@@ -1,5 +1,177 @@
 // ============================================
-// SelectField Logic Functions
+// SelectField Helper Functions
+// ============================================
+
+function createState(initialValue, isMultiple) {
+    const values = new Set(initialValue ? initialValue.split(',').filter(Boolean) : []);
+    return { values, isMultiple };
+}
+
+function findOption(options, value) {
+    return options.find(o => String(o.value) === String(value));
+}
+
+function getSelectedLabels(state, options) {
+    return Array.from(state.values)
+        .map(val => findOption(options, val)?.label)
+        .filter(Boolean);
+}
+
+function applyClasses(element, toAdd = [], toRemove = []) {
+    if (!element) return;
+    element.classList.add(...toAdd);
+    element.classList.remove(...toRemove);
+}
+
+// ============================================
+// Display Update Functions
+// ============================================
+
+function updateMultiDisplay(display, badgesContainer, state, options, placeholder) {
+    const labels = getSelectedLabels(state, options);
+    
+    if (labels.length === 0) {
+        display.textContent = placeholder;
+        applyClasses(display, ['text-gray-400']);
+    } else {
+        display.textContent = `${labels.length} seleccionado${labels.length > 1 ? 's' : ''}`;
+        applyClasses(display, [], ['text-gray-400']);
+    }
+
+    if (badgesContainer) {
+        badgesContainer.innerHTML = labels.map(label => {
+            const value = findOption(options, label)?.value;
+            return `
+                <span class="inline-flex items-center gap-2 rounded-full bg-blue-500/20 border border-blue-500/40 px-3 py-1.5 text-xs font-medium text-blue-300">
+                    ${label}
+                    <button type="button" class="hover:text-blue-200 transition remove-badge" data-value="${value}">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                </span>
+            `;
+        }).join('');
+
+        attachBadgeListeners(badgesContainer, state);
+    }
+}
+
+function updateSingleDisplay(display, state, options, placeholder) {
+    const selected = findOption(options, Array.from(state.values)[0]);
+    if (selected) {
+        display.textContent = selected.label;
+        applyClasses(display, [], ['text-gray-400']);
+    } else {
+        display.textContent = placeholder;
+        applyClasses(display, ['text-gray-400']);
+    }
+}
+
+function attachBadgeListeners(container, state) {
+    container.querySelectorAll('.remove-badge').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            state.values.delete(btn.dataset.value);
+        });
+    });
+}
+
+// ============================================
+// Checkbox Update Functions
+// ============================================
+
+function updateCheckboxes(dropdown, state) {
+    dropdown.querySelectorAll('[data-value]').forEach(opt => {
+        const isSelected = state.values.has(String(opt.dataset.value));
+        
+        if (state.isMultiple) {
+            const checkbox = opt.querySelector('input[type="checkbox"]');
+            const checkIcon = opt.querySelector('.fa-check');
+            if (checkbox) checkbox.checked = isSelected;
+            if (checkIcon) {
+                applyClasses(checkIcon, isSelected ? [] : ['hidden'], isSelected ? ['hidden'] : []);
+            }
+            applyClasses(opt, isSelected ? ['bg-blue-500/10'] : [], isSelected ? [] : ['bg-blue-500/10']);
+        } else {
+            applyClasses(opt, 
+                isSelected ? ['bg-blue-500/10', 'text-blue-300'] : [], 
+                isSelected ? [] : ['bg-blue-500/10', 'text-blue-300']
+            );
+        }
+    });
+}
+
+// ============================================
+// Dropdown Position and Animation
+// ============================================
+
+function positionDropdown(trigger, dropdown) {
+    const rect = trigger.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + 8) + 'px';
+    dropdown.style.left = rect.left + 'px';
+    dropdown.style.width = rect.width + 'px';
+}
+
+function openDropdown(trigger, dropdown, icon) {
+    positionDropdown(trigger, dropdown);
+    dropdown.style.display = 'block';
+    setTimeout(() => {
+        applyClasses(dropdown, [], ['hidden']);
+        dropdown.style.visibility = 'visible';
+        dropdown.style.opacity = '1';
+        dropdown.style.pointerEvents = 'auto';
+    }, 0);
+    icon.classList.add('rotate-180');
+    return true;
+}
+
+function closeDropdown(dropdown, icon) {
+    dropdown.style.visibility = 'hidden';
+    dropdown.style.opacity = '0';
+    dropdown.style.pointerEvents = 'none';
+    setTimeout(() => {
+        dropdown.style.display = 'none';
+    }, 200);
+    icon.classList.remove('rotate-180');
+    return false;
+}
+
+// ============================================
+// Event Handlers
+// ============================================
+
+function attachOptionListeners(dropdown, state, hiddenInput, callbacks) {
+    dropdown.querySelectorAll('[data-value]').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.preventDefault();
+            const value = String(opt.dataset.value);
+            
+            if (state.isMultiple) {
+                state.values.has(value) ? state.values.delete(value) : state.values.add(value);
+            } else {
+                state.values.clear();
+                state.values.add(value);
+                callbacks.closeDropdown();
+            }
+            
+            callbacks.updateDisplay();
+            callbacks.updateCheckboxes();
+            callbacks.updateHiddenInput();
+        });
+    });
+}
+
+function attachClickAwayListener(trigger, dropdown, callbacks) {
+    document.addEventListener('click', (e) => {
+        if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+            if (dropdown.style.visibility === 'visible') {
+                callbacks.closeDropdown();
+            }
+        }
+    });
+}
+
+// ============================================
+// Main Initialization
 // ============================================
 
 function initializeSelectField(selectId, triggerId, dropdownId, options, isMultiple, placeholder, name) {
@@ -12,181 +184,49 @@ function initializeSelectField(selectId, triggerId, dropdownId, options, isMulti
     
     if (!trigger || !dropdown) return;
 
+    const state = createState(hiddenInput?.value || '', isMultiple);
     let isOpen = false;
-    const initialValue = hiddenInput?.value || '';
-    let selectedValues = new Set(initialValue ? initialValue.split(',').filter(Boolean) : []);
 
-    function updateDisplay() {
-        if (isMultiple) {
-            const selectedLabels = Array.from(selectedValues)
-                .map(val => options.find(o => String(o.value) === String(val))?.label)
-                .filter(Boolean);
-            
-            if (selectedLabels.length === 0) {
-                display.textContent = placeholder;
-                display.classList.add('text-gray-400');
-            } else {
-                display.textContent = `${selectedLabels.length} seleccionado${selectedLabels.length > 1 ? 's' : ''}`;
-                display.classList.remove('text-gray-400');
-            }
-
-            // Update badges
-            if (badgesContainer) {
-                badgesContainer.innerHTML = selectedLabels.map(label => {
-                    const value = options.find(o => o.label === label)?.value;
-                    return `
-                        <span class="inline-flex items-center gap-2 rounded-full bg-blue-500/20 border border-blue-500/40 px-3 py-1.5 text-xs font-medium text-blue-300">
-                            ${label}
-                            <button type="button" class="hover:text-blue-200 transition remove-badge" data-value="${value}">
-                                <i class="fa-solid fa-xmark text-xs"></i>
-                            </button>
-                        </span>
-                    `;
-                }).join('');
-
-                badgesContainer.querySelectorAll('.remove-badge').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        selectedValues.delete(btn.dataset.value);
-                        updateCheckboxes();
-                        updateDisplay();
-                        if (hiddenInput) {
-                            hiddenInput.value = Array.from(selectedValues).join(',');
-                            hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                    });
-                });
-            }
-        } else {
-            const selected = options.find(o => String(o.value) === Array.from(selectedValues)[0]);
-            if (selected) {
-                display.textContent = selected.label;
-                display.classList.remove('text-gray-400');
-            } else {
-                display.textContent = placeholder;
-                display.classList.add('text-gray-400');
-            }
-        }
-    }
-
-    function updateCheckboxes() {
-        const optionButtons = dropdown.querySelectorAll('[data-value]');
-        optionButtons.forEach(opt => {
-            const isSelected = selectedValues.has(String(opt.dataset.value));
-            if (isMultiple) {
-                const checkbox = opt.querySelector('input[type="checkbox"]');
-                const checkIcon = opt.querySelector('.fa-check');
-                if (checkbox) checkbox.checked = isSelected;
-                if (checkIcon) {
-                    if (isSelected) {
-                        checkIcon.classList.remove('hidden');
-                        opt.classList.add('bg-blue-500/10');
-                    } else {
-                        checkIcon.classList.add('hidden');
-                        opt.classList.remove('bg-blue-500/10');
-                    }
-                }
-            } else {
-                if (isSelected) {
-                    opt.classList.add('bg-blue-500/10', 'text-blue-300');
-                } else {
-                    opt.classList.remove('bg-blue-500/10', 'text-blue-300');
-                }
-            }
-        });
-    }
-
-    function positionDropdown() {
-        const rect = trigger.getBoundingClientRect();
-        dropdown.style.top = (rect.bottom + 8) + 'px';
-        dropdown.style.left = rect.left + 'px';
-        dropdown.style.width = rect.width + 'px';
-    }
-
-    function openDropdown() {
-        positionDropdown();
-        isOpen = true;
-        dropdown.style.display = 'block';
-        setTimeout(() => {
-            dropdown.style.visibility = 'visible';
-            dropdown.style.opacity = '1';
-            dropdown.style.pointerEvents = 'auto';
-        }, 0);
-        icon.classList.add('rotate-180');
-    }
-
-    function closeDropdown() {
-        isOpen = false;
-        dropdown.style.visibility = 'hidden';
-        dropdown.style.opacity = '0';
-        dropdown.style.pointerEvents = 'none';
-        setTimeout(() => {
-            dropdown.style.display = 'none';
-        }, 200);
-        icon.classList.remove('rotate-180');
-    }
-
-    function toggleDropdown(e) {
-        if (e) e.preventDefault();
-        isOpen ? closeDropdown() : openDropdown();
-    }
-
-    trigger.addEventListener('click', toggleDropdown);
-    
-    // Add focus/blur for validation
-    trigger.addEventListener('blur', () => {
-        if (hiddenInput) {
-            hiddenInput.dispatchEvent(new Event('focusout', { bubbles: true }));
-        }
-    });
-
-    trigger.addEventListener('focus', () => {
-        if (hiddenInput) {
-            hiddenInput.dispatchEvent(new Event('focus', { bubbles: true }));
-        }
-    });
-
-    window.addEventListener('scroll', () => {
-        if (isOpen) positionDropdown();
-    }, true);
-    window.addEventListener('resize', () => {
-        if (isOpen) positionDropdown();
-    });
-
-    const optionButtons = dropdown.querySelectorAll('[data-value]');
-    optionButtons.forEach(opt => {
-        opt.addEventListener('click', (e) => {
-            e.preventDefault();
-            const value = String(opt.dataset.value);
-            
-            if (isMultiple) {
-                selectedValues.has(value) ? selectedValues.delete(value) : selectedValues.add(value);
-            } else {
-                selectedValues.clear();
-                selectedValues.add(value);
-                closeDropdown();
-            }
-            
-            updateCheckboxes();
-            updateDisplay();
+    const callbacks = {
+        updateDisplay: () => {
+            isMultiple 
+                ? updateMultiDisplay(display, badgesContainer, state, options, placeholder)
+                : updateSingleDisplay(display, state, options, placeholder);
+        },
+        updateCheckboxes: () => updateCheckboxes(dropdown, state),
+        updateHiddenInput: () => {
             if (hiddenInput) {
-                hiddenInput.value = Array.from(selectedValues).join(',');
-                // Dispatch both input and change for validators
+                hiddenInput.value = Array.from(state.values).join(',');
                 hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
                 hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
-        });
-    });
+        },
+        toggleDropdown: (e) => {
+            if (e) e.preventDefault();
+            isOpen = isOpen ? closeDropdown(dropdown, icon) : openDropdown(trigger, dropdown, icon);
+        },
+        closeDropdown: () => {
+            isOpen = closeDropdown(dropdown, icon);
+        },
+    };
 
-    document.addEventListener('click', (e) => {
-        if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
-            if (isOpen) closeDropdown();
-        }
-    });
+    trigger.addEventListener('click', callbacks.toggleDropdown);
+    trigger.addEventListener('blur', () => hiddenInput?.dispatchEvent(new Event('focusout', { bubbles: true })));
+    trigger.addEventListener('focus', () => hiddenInput?.dispatchEvent(new Event('focus', { bubbles: true })));
 
-    updateCheckboxes();
-    updateDisplay();
+    window.addEventListener('scroll', () => isOpen && positionDropdown(trigger, dropdown), true);
+    window.addEventListener('resize', () => isOpen && positionDropdown(trigger, dropdown));
+
+    attachOptionListeners(dropdown, state, hiddenInput, callbacks);
+    attachClickAwayListener(trigger, dropdown, callbacks);
+
+    callbacks.updateCheckboxes();
+    callbacks.updateDisplay();
 }
+
+// ============================================
+// Error Management
+// ============================================
 
 function clearError(selectId) {
     const errorContainer = document.getElementById(`${selectId}-error`);
@@ -199,32 +239,14 @@ function clearError(selectId) {
     }
     if (errorIcon) errorIcon.classList.add('hidden');
     if (trigger) {
-        trigger.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/10');
-        trigger.classList.add('border-gray-600', 'focus:border-blue-500', 'focus:ring-blue-500/20');
+        applyClasses(trigger,
+            ['border-gray-600', 'focus:border-blue-500', 'focus:ring-blue-500/20'],
+            ['border-red-500', 'focus:border-red-500', 'focus:ring-red-500/10']
+        );
     }
 }
 
-window.initSelectFields = function() {
-    const selectElements = document.querySelectorAll('[data-select-init]');
-    selectElements.forEach(el => {
-        const selectId = el.dataset.selectId;
-        const triggerId = el.dataset.triggerId;
-        const dropdownId = el.dataset.dropdownId;
-        const optionsJson = el.dataset.options;
-        const isMultiple = el.dataset.multiple === 'true';
-        const placeholder = el.dataset.placeholder || 'Selecciona una opción';
-        const name = el.dataset.name || '';
-        
-        try {
-            const options = JSON.parse(optionsJson);
-            initializeSelectField(selectId, triggerId, dropdownId, options, isMultiple, placeholder, name);
-        } catch (e) {
-            console.error('Error initializing select field:', e);
-        }
-    });
-};
-
-window.setSelectError = function(selectId, errorMessage) {
+function setSelectError(selectId, errorMessage) {
     const errorContainer = document.getElementById(`${selectId}-error`);
     const errorIcon = document.getElementById(`${selectId}-error-icon`);
     const trigger = document.getElementById(`trigger-${selectId}`);
@@ -235,10 +257,16 @@ window.setSelectError = function(selectId, errorMessage) {
     }
     if (errorIcon) errorIcon.classList.remove('hidden');
     if (trigger) {
-        trigger.classList.remove('border-gray-600', 'focus:border-blue-500', 'focus:ring-blue-500/20');
-        trigger.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/10');
+        applyClasses(trigger,
+            ['border-red-500', 'focus:border-red-500', 'focus:ring-red-500/10'],
+            ['border-gray-600', 'focus:border-blue-500', 'focus:ring-blue-500/20']
+        );
     }
-};
+}
+
+// Expose functions to window
+window.clearError = clearError;
+window.setSelectError = setSelectError;
 
 // ============================================
 // SelectField Component
@@ -264,7 +292,7 @@ export function SelectField({
     const hasError = Boolean(error);
     const valueArray = Array.isArray(value) ? value.map(String) : (value ? [String(value)] : []);
     const optionsJson = JSON.stringify(options);
-
+    
     const triggerClasses = `w-full flex items-center justify-between rounded-lg border-2 transition hover:border-gray-500 hover:bg-gray-750 focus:outline-none focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed text-left px-4 py-2.5 text-sm text-gray-200 ${
         hasError 
             ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' 
@@ -280,7 +308,6 @@ export function SelectField({
                 </label>
             ` : ''}
             
-            <!-- Custom Select Trigger -->
             <div class="relative w-full">
                 <button
                     id="${triggerId}"
@@ -291,21 +318,19 @@ export function SelectField({
                     <i class="fa-solid fa-chevron-down text-xs text-gray-400 transition" id="icon-${selectId}"></i>
                 </button>
 
-                <!-- Error/Success Icons -->
                 ${withError || hasError ? `
-                    <span id="${selectId}-error-icon" class="pointer-events-none absolute inset-y-0 right-12 ${hasError ? 'flex' : 'hidden'} items-center text-red-400">
+                    <span id="${name}-error-icon" class="pointer-events-none absolute inset-y-0 right-12 ${hasError ? 'flex' : 'hidden'} items-center text-red-400">
                         <i class="fa-solid fa-circle-xmark"></i>
                     </span>
                 ` : ''}
             </div>
 
-            <!-- Custom Dropdown Menu (Fixed Position) -->
             <div 
                 id="${dropdownId}"
                 style="display: none; visibility: hidden; opacity: 0; pointer-events: none; position: fixed; z-index: 9999;"
                 class="transition-all duration-200">
                 <div class="w-full max-h-64 overflow-y-auto rounded-lg border border-gray-600 bg-gray-800 shadow-xl shadow-black/40">
-                    ${options.map((opt, idx) => `
+                    ${options.map(opt => `
                         <button
                             type="button"
                             data-value="${opt.value}"
@@ -322,29 +347,21 @@ export function SelectField({
                 </div>
             </div>
 
-            <!-- Hidden Input for Form Submission (Este es el que valida FormValidator) -->
             <input 
                 type="hidden" 
                 id="${selectId}"
                 name="${name}"
                 value="${valueArray.join(',')}"
+                data-select-trigger="${triggerId}"
                 ${required ? 'required' : ''}>
 
-            <!-- Selected Badges (for multi-select) -->
             ${multiple ? `
-                <div id="badges-${selectId}" class="flex flex-wrap gap-2">
-                    <!-- Badges will be inserted here -->
-                </div>
+                <div id="badges-${selectId}" class="flex flex-wrap gap-2"></div>
             ` : ''}
 
-            <!-- Error Message -->
-            ${withError ? `
-                <p id="${selectId}-error" class="text-xs font-medium ${hasError ? 'text-red-400' : 'hidden text-red-400'}">
+            ${withError || hasError ? `
+                <p id="${name}-error" class="text-xs font-medium ${hasError ? 'text-red-400' : 'hidden text-red-400'}">
                     ${hasError ? `<i class="fa-solid fa-circle-exclamation mr-1"></i>${error}` : ''}
-                </p>
-            ` : hasError ? `
-                <p class="text-xs font-medium text-red-400">
-                    <i class="fa-solid fa-circle-exclamation mr-1"></i>${error}
                 </p>
             ` : ''}
         </div>
@@ -352,8 +369,9 @@ export function SelectField({
 }
 
 export function initSelectFields() {
-    const selectElements = document.querySelectorAll('[data-select-init]');
+    const selectElements = document.querySelectorAll('[data-select-init]:not([data-initialized])');
     selectElements.forEach(el => {
+        el.dataset.initialized = 'true';
         const selectId = el.dataset.selectId;
         const triggerId = el.dataset.triggerId;
         const dropdownId = el.dataset.dropdownId;

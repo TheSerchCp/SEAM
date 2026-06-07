@@ -16,16 +16,16 @@ export async function PrivateLayout(content) {
                 ${await Sidebar()}
 
                 <!-- Content Area -->
-                <div class="min-w-0 flex-1 md:ml-72">
+                <div class="min-w-0 flex-1 md:ml-72 flex flex-col">
                     <!-- Main Content -->
-                    <main class="min-w-0 px-4 py-5 sm:px-6 lg:px-8 pb-40 md:pb-6">
+                    <main class="flex-1 min-w-0 px-4 py-5 sm:px-6 lg:px-8 pb-40 md:pb-6">
                         <div class="mx-auto w-full max-w-7xl">
                             ${content}
                         </div>
                     </main>
 
                     <!-- Footer (below content) -->
-                    <footer class="border-t border-gray-800 bg-gray-900/95 shadow-lg shadow-black/20 backdrop-blur-sm md:sticky md:bottom-0">
+                    <footer class="border-t border-gray-800 bg-gray-900/95 shadow-lg shadow-black/20 backdrop-blur-sm">
                         ${await Footer()}
                     </footer>
                 </div>

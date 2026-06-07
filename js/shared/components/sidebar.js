@@ -30,15 +30,15 @@ export async function Sidebar() {
 
     return `
         <!-- Mobile Floating Menu (Horizontal, Fixed Bottom) -->
-        <nav class="fixed bottom-0 left-0 right-0 z-30 md:hidden">
-            <div class="m-4 flex items-center justify-center gap-2 bg-gray-900/95 backdrop-blur-sm border border-gray-800 rounded-2xl p-3 shadow-xl shadow-black/40 max-w-fit mx-auto">
+        <nav class="fixed bottom-0 left-0 right-0 z-30 md:hidden flex flex-row max-w-fit mx-auto">
+            <div class="m-4 flex items-center justify-center gap-2 bg-gray-900/95 backdrop-blur-sm border border-gray-800 rounded-full px-3 py-1 shadow-xl shadow-black/40 ">
                 ${menuOptions.map(item => {
                     const active = isActive(item.link);
                     return `
                         <button
                             type="button"
                             onclick="navigateSidebar('${item.link}')"
-                            class="group flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-center text-xs font-medium transition-all duration-200 ${active
+                            class="group flex flex-col items-center justify-center gap-1 rounded-full px-6 py-2.5 text-center text-xs font-medium transition-all duration-200 hover:cursor-pointer ${active
                                 ? 'bg-blue-500/30 text-blue-300 shadow-lg shadow-blue-500/20'
                                 : 'text-gray-400 hover:bg-white/5 hover:text-white'
                             }"
@@ -49,12 +49,13 @@ export async function Sidebar() {
                     `;
                 }).join('')}
                 
-                <div class="border-l border-gray-800/60 h-8 mx-1"></div>
-                
+            </div>
+                       
+            <div class="m-4 px-2 flex  items-center justify-center bg-gray-900/95 backdrop-blur-sm border border-gray-800 rounded-full shadow-xl shadow-black/40">
                 <button
                     type="button"
                     onclick="showLogoutModal()"
-                    class="group flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-center text-xs font-medium text-gray-400 transition-all duration-200 hover:bg-red-500/10 hover:text-red-400"
+                    class="group flex flex-col items-center justify-center rounded-full px-6 py-3 text-center text-xs font-medium text-gray-400 transition-all duration-200 hover:bg-red-500/10 hover:text-red-400 hover:cursor-pointer"
                     title="Cerrar sesión">
                     <i class="fa-solid fa-sign-out-alt text-lg"></i>
                     <span class="truncate text-[10px]">Salir</span>

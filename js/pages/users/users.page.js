@@ -1,9 +1,10 @@
 import { PrivateLayout } from '../../layout/PrivateLayout.js';
-import { getUsers, getUserById, createUser, updateUser, removeUser } from '../../services/users.service.js';
+import { getUsers, getUserById, createUser, updateUser, removeUser, toggleUserState } from '../../services/users.service.js';
 import { getRoles } from '../../services/roles.service.js';
 import { FormModal } from '../../shared/components/FormModal.js';
 import { Modal } from '../../shared/components/Modal.js';
 import { Table } from '../../shared/components/ui/Table.js';
+import { Button } from '../../shared/components/ui/Button.js';
 import { FormValidator } from '../../shared/utils/FormValidator.js';
 import { EventBus } from '../../core/EventBus.js';
 import { shouldUpdatePage } from '../../core/OperationListeners.js';
@@ -13,7 +14,8 @@ const USER_SCHEMA = {
     name: { required: true, text: true, minLength: 2 },
     email: { required: true, email: true },
     password: { required: true, password: true },
-    confirmPassword: { required: true, password: true, match: 'password' }
+    confirmPassword: { required: true, password: true, match: 'password' },
+    idRole: { required: true },
 };
 
 const USER_EDIT_SCHEMA = {
@@ -28,6 +30,7 @@ const USER_EDIT_SCHEMA = {
             return val === pwd || 'Los campos no coinciden';
         }
     },
+    idRole: { required: true },
 };
 
 const USER_COLUMNS = [
@@ -37,9 +40,10 @@ const USER_COLUMNS = [
     { label: 'Rol', key: 'roleName' },
 ];
 
-const addButtonClasses = 'inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-500 px-3 py-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-blue-600 active:bg-blue-700';
-const editButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-amber-500 bg-amber-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-amber-600';
-const deleteButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-red-500 bg-red-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-red-600';
+const addButtonClasses = 'inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-500 px-3 py-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-blue-600 active:bg-blue-700 hover:cursor-pointer';
+const editButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-amber-500 bg-amber-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-amber-600 hover:cursor-pointer';
+const deleteButtonClasses = 'inline-flex items-center justify-center gap-1 rounded-md border border-red-500 bg-red-500 px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-red-600 hover:cursor-pointer';
+const stateButtonClasses = (isActive) => `inline-flex items-center justify-center gap-1 rounded-md border hover:cursor-pointer ${isActive ? 'border-green-500 bg-green-500 hover:bg-green-600' : 'border-gray-500 bg-gray-500 hover:bg-gray-600'} px-2 py-1.5 text-[10px] sm:text-xs font-semibold text-white transition`;
 
 async function renderPage() {
     const users = await getUsers();
@@ -55,11 +59,15 @@ async function renderPage() {
                             <h1 class="text-xl font-bold text-white sm:text-2xl">Gestionar Usuarios</h1>
                             <p class="mt-1 text-xs text-gray-400 sm:text-sm">Administra los usuarios del sistema</p>
                         </div>
-                        <button id="btn-addUser" class="${addButtonClasses}">
-                            <i class="fa-solid fa-user-plus"></i>
-                            <span class="hidden sm:inline">Agregar</span>
-                            <span class="sm:hidden">Nuevo</span>
-                        </button>
+                        ${Button({
+                            id:              'btn-addUser',
+                            className:       addButtonClasses,
+                            icon:            'fa-solid fa-user-plus',
+                            buttonText:      'Agregar',
+                            hasTooltip:      true,
+                            tooltipText:     'Agregar usuario',
+                            tooltipPosition: 'bottom',
+                        })}
                     </div>
                 </div>
             </div>
@@ -83,8 +91,9 @@ async function renderPage() {
                         tbodyId: 'users-body',
                         emptyMessage: 'No hay usuarios registrados',
                         actions: (user) => `
-                            <button class="${editButtonClasses}" onclick="window.editUser?.(${user.idUser})" title="Editar"><i class="fa-solid fa-pen"></i><span class="hidden sm:inline">Editar</span></button>
-                            <button class="${deleteButtonClasses}" onclick="window.deleteUser?.(${user.idUser})" title="Eliminar"><i class="fa-solid fa-trash"></i><span class="hidden sm:inline">Eliminar</span></button>`
+                            ${Button({ className: editButtonClasses,                  action: `window.editUser?.(${user.idUser})`,                         icon: 'fa-solid fa-pen',     buttonText: 'Editar',    hasTooltip: true, tooltipText: 'Editar usuario',             tooltipPosition: 'top' })}
+                            ${Button({ className: stateButtonClasses(user.isActive), action: `window.toggleUser?.(${user.idUser},${!user.isActive})`, icon: `fa-solid fa-toggle-${user.isActive ? 'on' : 'off'}`,        hasTooltip: true, tooltipText: user.isActive ? 'Desactivar' : 'Activar', tooltipPosition: 'top' })}
+                            ${Button({ className: deleteButtonClasses,                action: `window.deleteUser?.(${user.idUser})`,                       icon: 'fa-solid fa-trash',   buttonText: 'Eliminar',  hasTooltip: true, tooltipText: 'Eliminar usuario',           tooltipPosition: 'top' })}`
                     })}
                 </div>
             </div>
@@ -164,6 +173,7 @@ export async function UsersPage() {
                     { name: 'confirmPassword', label: 'Confirmar Contraseña', type: 'password', placeholder: '••••••••', required: true },
                     { name: 'idRole', label: 'Rol', type: 'select', options: roleOptions, required: true },
                 ],
+                type: 'success',
                 schema: USER_SCHEMA,
                 onConfirm: async (formData) => {
                     try {
@@ -217,7 +227,7 @@ window.editUser = async function(idUser) {
             { name: 'email', label: 'Email', type: 'email', value: user.email, required: true },
             { name: 'password', label: 'Nueva Contraseña (dejar vacío para no cambiar)', type: 'password', placeholder: '••••••••' },
             { name: 'confirmPassword', label: 'Confirmar Contraseña', type: 'password', placeholder: '••••••••' },
-            { name: 'idRole', label: 'Rol', type: 'select', value: user.idRole, options: window.usersRoleOptions, required: true },
+            { name: 'idRole', label: 'Rol', type: 'select', value: user.roleId, options: window.usersRoleOptions, required: true },
         ],
         schema: window.usersEditSchema,
         onConfirm: async (formData) => {
@@ -260,6 +270,38 @@ window.deleteUser = async function(idUser) {
             }
         },
         confirmText: 'Eliminar',
-        isDanger: true,
+        type: 'danger',
     });
 };
+
+window.toggleUser = async function(idUser, enable) {
+    if (!window.usersModalContainer) {
+        console.warn('Modal container no disponible, reintentando...');
+        setTimeout(() => window.toggleUser(idUser, enable), 100);
+        return;
+    }
+
+    try {
+           await Modal({
+        title: `${enable ? 'Activar' : 'Desactivar'} usuario`,
+        body: `<p class="text-sm text-gray-300">¿Estás seguro de que deseas ${enable ? 'activar' : 'desactivar'} este usuario?</p>`,
+        onConfirm: async () => {
+            try {
+                await toggleUserState(idUser, Number(enable));
+                EventBus.emit('page:reload');
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        },
+        confirmText: `${enable ? 'Activar' : 'Desactivar'}`,
+        type: `${enable ? 'success' : 'danger'}`,
+    });
+    } catch (error) {
+        await Modal({
+            title: 'Error',
+            body: `<p class="text-sm text-gray-300">No fue posible ${enable ? 'activar' : 'desactivar'} el usuario. Intenta nuevamente.</p>`,
+            confirmText: 'Cerrar',
+        });
+    }
+}

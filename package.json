@@ -4,21 +4,24 @@
  "description": "",
  "main": "index.js",
  "scripts": {
-   "start": "node server.js",
-   "dev": "node --watch server.js",
-   "dev:watch": "node --watch server.js",
-   "dev:nodemon": "nodemon server.js",
-   "build:css": "node build-tailwind.mjs",
-   "build:css:watch": "tailwindcss -i ./css/tailwind-base.css -o ./css/tailwind.css --watch"
+  "start": "node server.js",
+  "dev": "node --watch server.js",
+  "dev:watch": "node --watch server.js",
+  "dev:nodemon": "nodemon server.js",
+  "build:css": "node build-tailwind.mjs",
+  "build:css:watch": "tailwindcss -i ./css/tailwind-base.css -o ./css/tailwind.css --watch"
  },
  "keywords": [],
  "author": "",
  "license": "ISC",
  "type": "module",
  "devDependencies": {
-   "@tailwindcss/postcss": "^4.1.18",
-   "nodemon": "^3.1.0",
-   "postcss": "^8.5.6",
-   "tailwindcss": "^4.1.18"
+  "@tailwindcss/postcss": "^4.1.18",
+  "nodemon": "^3.1.0",
+  "postcss": "^8.5.6",
+  "tailwindcss": "^4.1.18"
+ },
+ "dependencies": {
+  "tailwindcss-cli": "^0.1.2"
  }
 }

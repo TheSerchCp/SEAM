@@ -6,11 +6,16 @@ export async function Modal({
     confirmText = 'Confirmar',
     cancelText = 'Cancelar',
     confirmBtnId = null,
-    isDanger = false,
+    type = 'default',
 } = {}) {
-    const confirmBtnColor = isDanger 
-        ? 'bg-red-600 hover:bg-red-700 border-red-600' 
-        : 'bg-blue-600 hover:bg-blue-700 border-blue-600';
+    const buttonConfirmMapColors = {
+        'default': 'bg-blue-600 hover:bg-blue-700 border-blue-600',
+        'danger': 'bg-red-600 hover:bg-red-700 border-red-600',
+        'success': 'bg-emerald-600 hover:bg-emerald-700 border-emerald-600',
+    }
+
+
+    const confirmBtnColor = buttonConfirmMapColors[type] || buttonConfirmMapColors['default'];
 
     const modalHtml = `
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -33,9 +38,8 @@ export async function Modal({
                         ${cancelText}
                     </button>
                     <button 
-                        id="btn-confirm"
-                        ${confirmBtnId ? `id="${confirmBtnId}"` : ''}
-                        class="flex-1 rounded-lg border ${confirmBtnColor} px-4 py-2.5 text-sm font-semibold text-white transition">
+                        id="${confirmBtnId || 'btn-confirm'}"
+                        class="flex-1 rounded-lg border ${confirmBtnColor} px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
                         ${confirmText}
                     </button>
                 </div>
@@ -51,7 +55,8 @@ export async function Modal({
 
     // Adjuntar event listeners
     const cancelBtn = modal.querySelector('#btn-cancel');
-    const confirmBtn = modal.querySelector('#btn-confirm') || (confirmBtnId ? modal.querySelector(`#${confirmBtnId}`) : null);
+    const confirmBtnSelector = confirmBtnId || 'btn-confirm';
+    const confirmBtn = modal.querySelector(`#${confirmBtnSelector}`);
     const backdrop = modal;
 
     // Cerrar al hacer click en cancelar

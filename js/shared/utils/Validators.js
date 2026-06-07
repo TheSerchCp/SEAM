@@ -18,4 +18,9 @@ export const validators = {
     validateText(value) {
         return /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(value);
     },
+
+    /*Verificar el formato de ruta GET /api/v1/cualquier nombre */
+    validateRoute(value){
+        return /^(GET|POST|PUT|DELETE|PATCH)\s\/api\/v\d+\/[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\-_\/:]+$/.test(value);
+    }
 };
